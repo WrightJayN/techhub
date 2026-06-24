@@ -1,0 +1,290 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Tech Hub — Harness. Unite. Build. The tech community at UTech, Jamaica.' } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content={description} />
+  <title>{title} | Tech Hub — UTech Jamaica</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Favicon placeholder -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</head>
+<body>
+
+  <!-- ─── NAV ─────────────────────────────────────────────────────── -->
+  <header class="nav-wrapper">
+    <nav class="container nav">
+      <a href="/" class="nav-logo">
+        <span class="nav-logo-the">TECH</span>
+        <span class="nav-logo-hub">HUB</span>
+      </a>
+
+      <!-- Mobile hamburger -->
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/" class="nav-link">Home</a></li>
+        <li><a href="/about" class="nav-link">About</a></li>
+        <li><a href="/blog" class="nav-link">Blog</a></li>
+        <li><a href="/events" class="nav-link">Events</a></li>
+        <li><a href="/join" class="nav-cta btn btn-primary">Join Tech Hub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ─── PAGE CONTENT ─────────────────────────────────────────────── -->
+  <main>
+    <slot />
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="/" class="nav-logo">
+          <span class="nav-logo-the">TECH</span>
+          <span class="nav-logo-hub">HUB</span>
+        </a>
+        <p>Harness. Unite. Build.<br/>The tech community at UTech, Jamaica.</p>
+      </div>
+
+      <div class="footer-links">
+        <div class="footer-col">
+          <span class="footer-heading">Navigate</span>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/events">Events</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <span class="footer-heading">Community</span>
+          <ul>
+            <li><a href="/join">Join Tech Hub</a></li>
+            <li><a href="https://utech.edu.jm" target="_blank" rel="noopener">UTech Jamaica</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom container">
+      <p>&copy; {new Date().getFullYear()} Tech Hub — UTech Jamaica. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile nav toggle
+    const toggle = document.getElementById('navToggle');
+    const links = document.getElementById('navLinks');
+    toggle?.addEventListener('click', () => {
+      const open = links?.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+  </script>
+
+</body>
+</html>
+
+<style>
+/* ─── NAV ──────────────────────────────────────────────────────── */
+.nav-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-xl);
+  letter-spacing: -0.02em;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.nav-logo-the {
+  color: var(--color-text);
+}
+
+.nav-logo-hub {
+  color: var(--color-primary);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.nav-link {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-muted);
+  transition: color var(--transition);
+}
+
+.nav-link:hover {
+  color: var(--color-text);
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2);
+}
+
+.nav-toggle span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--color-text);
+  border-radius: 2px;
+  transition: all var(--transition);
+}
+
+/* ─── FOOTER ────────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-16);
+  padding-bottom: var(--space-8);
+  margin-top: var(--space-24);
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-12);
+  padding-bottom: var(--space-12);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.footer-brand p {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  max-width: 28ch;
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--space-12);
+  justify-content: flex-end;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.footer-heading {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.footer-col a {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  transition: color var(--transition);
+}
+
+.footer-col a:hover {
+  color: var(--color-primary);
+}
+
+.footer-bottom {
+  padding-top: var(--space-6);
+}
+
+.footer-bottom p {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  max-width: none;
+}
+
+/* ─── MOBILE ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-4) var(--space-6);
+  }
+
+  .nav-links.is-open {
+    display: flex;
+  }
+
+  .nav-links li {
+    width: 100%;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-3) 0;
+  }
+
+  .nav-links li:last-child {
+    border-bottom: none;
+    padding-top: var(--space-4);
+  }
+
+  .nav-cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-links {
+    justify-content: flex-start;
+  }
+}
+</style>

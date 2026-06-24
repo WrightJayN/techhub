@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Join" description="Join Tech Hub — UTech Jamaica's tech community. Sign up with your email to get access to events, workshops, and mentorship.">
+
+  <section class="section">
+    <div class="container join-wrap">
+
+      <div class="join-left">
+        <span class="section-label">Free membership</span>
+        <h1>Join Tech Hub.</h1>
+        <p class="join-sub">Drop your email below and we'll add you to the community. You'll hear from us about upcoming events, workshops, and opportunities — no spam, ever.</p>
+
+        <ul class="perks">
+          <li><span class="perk-icon">✓</span> Access to all Hub events & workshops</li>
+          <li><span class="perk-icon">✓</span> Connect with students and industry mentors</li>
+          <li><span class="perk-icon">✓</span> Early access to hackathons and project collabs</li>
+          <li><span class="perk-icon">✓</span> Weekly digest of tech news and opportunities</li>
+        </ul>
+      </div>
+
+      <div class="join-right">
+        <div class="form-card card">
+          <h2>Get started</h2>
+          <p>Takes 30 seconds. Free forever.</p>
+
+          <!-- Netlify Forms handles submission — no backend needed -->
+          <form name="hub-membership" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="join-form">
+            <input type="hidden" name="form-name" value="hub-membership" />
+            <input type="hidden" name="bot-field" style="display:none" />
+
+            <div class="field">
+              <label for="name">Full name</label>
+              <input type="text" id="name" name="name" placeholder="Your full name" required autocomplete="name" />
+            </div>
+
+            <div class="field">
+              <label for="email">Email address</label>
+              <input type="email" id="email" name="email" placeholder="you@utech.edu.jm" required autocomplete="email" />
+            </div>
+
+            <div class="field">
+              <label for="programme">Programme of study</label>
+              <input type="text" id="programme" name="programme" placeholder="e.g. BSc Computer Science" />
+            </div>
+
+            <div class="field">
+              <label for="year">Year of study</label>
+              <select id="year" name="year">
+                <option value="">Select year</option>
+                <option>Year 1</option>
+                <option>Year 2</option>
+                <option>Year 3</option>
+                <option>Year 4</option>
+                <option>Postgraduate</option>
+                <option>Alumni / Other</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary submit-btn">Join Tech Hub →</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+.join-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+  align-items: start;
+  padding-top: var(--space-16);
+}
+
+.join-left h1 { margin: var(--space-4) 0 var(--space-6); }
+.join-sub { font-size: var(--text-lg); margin-bottom: var(--space-8); }
+
+.perks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.perks li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-base);
+  color: var(--color-text);
+}
+
+.perk-icon {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: var(--text-lg);
+}
+
+.form-card h2 { margin-bottom: var(--space-1); }
+.form-card > p { font-size: var(--text-sm); margin-bottom: var(--space-6); }
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+label {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+input, select {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  padding: 0.75rem 1rem;
+  width: 100%;
+  transition: border-color var(--transition);
+  outline: none;
+}
+
+input::placeholder { color: var(--color-muted); }
+
+input:focus, select:focus {
+  border-color: var(--color-primary);
+}
+
+select option { background: var(--color-surface); }
+
+.submit-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 0.875rem;
+  font-size: var(--text-base);
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .join-wrap { grid-template-columns: 1fr; gap: var(--space-12); }
+}
+</style>

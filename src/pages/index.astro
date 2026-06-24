@@ -1,0 +1,182 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { sanityClient, BLOG_POSTS_QUERY } from '../lib/sanity';
+
+let posts = [];
+try {
+  posts = await sanityClient.fetch(BLOG_POSTS_QUERY + '[0...3]');
+} catch (e) {}
+---
+
+<BaseLayout title="Home">
+
+  <!-- HERO -->
+  <section class="hero hex-bg">
+    <div class="container hero-inner">
+      <div class="hero-content">
+        <span class="section-label">UTech Jamaica</span>
+        <h1>Harness.<br/>Unite.<br/><span class="text-gradient">Build.</span></h1>
+        <p class="hero-sub">
+          Tech Hub is UTech's premier tech community — where students connect,
+          build real projects, and launch careers in technology.
+        </p>
+        <div class="hero-actions">
+          <a href="/join" class="btn btn-primary">Join Tech Hub →</a>
+          <a href="/about" class="btn btn-outline">Learn more</a>
+        </div>
+      </div>
+
+      <div class="hero-badge" aria-hidden="true">
+        <svg viewBox="0 0 200 200" width="280" height="280">
+          <defs>
+            <pattern id="hex" x="0" y="0" width="30" height="52" patternUnits="userSpaceOnUse">
+              <polygon points="15,2 28,9.5 28,24.5 15,32 2,24.5 2,9.5"
+                fill="none" stroke="#CC0000" stroke-width="0.8" stroke-opacity="0.3"/>
+            </pattern>
+          </defs>
+          <circle cx="100" cy="100" r="96" fill="url(#hex)"/>
+          <circle cx="100" cy="100" r="96" fill="none" stroke="#CC0000" stroke-width="1.5" stroke-opacity="0.4"/>
+          <circle cx="100" cy="100" r="70" fill="#141414"/>
+          <g transform="translate(100,85)" fill="#CC0000">
+            <circle cx="0" cy="0" r="14" fill="none" stroke="#CC0000" stroke-width="3"/>
+            <circle cx="0" cy="0" r="6"/>
+            <rect x="-3" y="-22" width="6" height="10" rx="2"/>
+            <rect x="-3" y="12" width="6" height="10" rx="2"/>
+            <rect x="12" y="-3" width="10" height="6" rx="2"/>
+            <rect x="-22" y="-3" width="10" height="6" rx="2"/>
+          </g>
+          <text x="100" y="120" text-anchor="middle"
+            font-family="Space Grotesk, sans-serif" font-size="22" font-weight="700"
+            fill="#FFFFFF" letter-spacing="-1">TECH HUB</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="stats-bar">
+        <div class="stat"><span class="stat-num">200+</span><span class="stat-label">Members</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">30+</span><span class="stat-label">Events hosted</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">10+</span><span class="stat-label">Projects built</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">UTech</span><span class="stat-label">Jamaica</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PILLARS -->
+  <section class="section">
+    <div class="container">
+      <span class="section-label">What we are</span>
+      <h2>Built for students<br/>who build things.</h2>
+      <div class="pillars">
+        <div class="pillar card">
+          <div class="pillar-icon">⚡</div>
+          <h3>Harness</h3>
+          <p>Tap into your potential. We connect you with tools, mentors, and resources to level up your tech skills fast.</p>
+        </div>
+        <div class="pillar card">
+          <div class="pillar-icon">🔗</div>
+          <h3>Unite</h3>
+          <p>A community of like-minded students and professionals. Build your network before you even graduate.</p>
+        </div>
+        <div class="pillar card">
+          <div class="pillar-icon">🛠️</div>
+          <h3>Build</h3>
+          <p>Ship real projects. Participate in hackathons, workshops, and collaborative builds that matter beyond the classroom.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOG PREVIEW -->
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <span class="section-label">From the blog</span>
+          <h2>Latest from Tech Hub</h2>
+        </div>
+        <a href="/blog" class="btn btn-outline">All posts →</a>
+      </div>
+      <div class="posts-grid">
+        {posts.length > 0 ? posts.map((post: any) => (
+          <a href={`/blog/${post.slug.current}`} class="post-card card">
+            {post.coverImage && <img src={post.coverImage} alt={post.title} class="post-img" loading="lazy"/>}
+            <div class="post-meta">
+              {post.category && <span class="post-tag">{post.category}</span>}
+              <span class="post-date">{new Date(post.publishedAt).toLocaleDateString('en-JM', {dateStyle:'medium'})}</span>
+            </div>
+            <h3 class="post-title">{post.title}</h3>
+            <p class="post-excerpt">{post.excerpt}</p>
+          </a>
+        )) : (
+          [
+            { t: 'Getting started with web development', tag: 'Tutorial' },
+            { t: 'How we ran our first hackathon', tag: 'Community' },
+            { t: 'Why you should join a tech club', tag: 'Opinion' },
+          ].map(({t, tag}) => (
+            <div class="post-card card">
+              <div class="post-placeholder-img"></div>
+              <div class="post-meta">
+                <span class="post-tag">{tag}</span>
+                <span class="post-date">Coming soon</span>
+              </div>
+              <h3 class="post-title">{t}</h3>
+              <p class="post-excerpt">Posts will appear here once Sanity CMS is connected.</p>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  </section>
+
+  <!-- JOIN CTA -->
+  <section class="cta-section hex-bg">
+    <div class="container cta-inner">
+      <span class="section-label">Ready?</span>
+      <h2>Become a member.<br/>It's free.</h2>
+      <p>Join hundreds of UTech students already in Tech Hub. Get access to events, workshops, mentorship, and a community that builds.</p>
+      <a href="/join" class="btn btn-primary" style="font-size:var(--text-base);padding:1rem 2rem;">Join Tech Hub →</a>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+.hero { padding: var(--space-24) 0 0; }
+.hero-inner { display:grid; grid-template-columns:1fr auto; gap:var(--space-12); align-items:center; padding-bottom:var(--space-16); }
+.hero-content h1 { margin: var(--space-4) 0 var(--space-6); }
+.hero-sub { font-size:var(--text-lg); max-width:44ch; margin-bottom:var(--space-8); }
+.hero-actions { display:flex; gap:var(--space-3); flex-wrap:wrap; }
+.stats-bar { display:flex; align-items:center; gap:var(--space-6); border-top:1px solid var(--color-border); padding:var(--space-6) 0; flex-wrap:wrap; }
+.stat { display:flex; flex-direction:column; }
+.stat-num { font-family:var(--font-display); font-size:var(--text-2xl); font-weight:700; color:var(--color-primary); }
+.stat-label { font-size:var(--text-xs); color:var(--color-muted); text-transform:uppercase; letter-spacing:.05em; }
+.stat-divider { width:1px; height:40px; background:var(--color-border); }
+.pillars { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-6); margin-top:var(--space-8); }
+.pillar-icon { font-size:2rem; margin-bottom:var(--space-4); }
+.pillar h3 { margin-bottom:var(--space-2); }
+.section-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:var(--space-8); }
+.posts-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-6); }
+.post-card { display:flex; flex-direction:column; gap:var(--space-3); text-decoration:none; }
+.post-img, .post-placeholder-img { width:100%; height:180px; object-fit:cover; border-radius:var(--radius-sm); background:var(--color-surface-2); margin-bottom:var(--space-2); }
+.post-meta { display:flex; align-items:center; gap:var(--space-3); }
+.post-tag { font-size:var(--text-xs); font-weight:600; font-family:var(--font-display); letter-spacing:.05em; text-transform:uppercase; color:var(--color-primary); }
+.post-date { font-size:var(--text-xs); color:var(--color-muted); }
+.post-title { font-size:var(--text-lg); color:var(--color-text); }
+.post-excerpt { font-size:var(--text-sm); margin:0; }
+.cta-section { padding:var(--space-24) 0; border-top:1px solid var(--color-border); }
+.cta-inner { display:flex; flex-direction:column; align-items:center; text-align:center; gap:var(--space-6); }
+.cta-inner h2 { font-size:clamp(var(--text-3xl),5vw,var(--text-5xl)); }
+.cta-inner p { max-width:50ch; text-align:center; font-size:var(--text-lg); }
+
+@media (max-width:768px) {
+  .hero-inner { grid-template-columns:1fr; }
+  .hero-badge { display:none; }
+  .pillars, .posts-grid { grid-template-columns:1fr; }
+  .section-header { flex-direction:column; align-items:flex-start; gap:var(--space-4); }
+  .stat-divider { display:none; }
+}
+</style>

@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { sanityClient, BLOG_POSTS_QUERY } from '../../lib/sanity';
+let posts = [];
+try { posts = await sanityClient.fetch(BLOG_POSTS_QUERY); } catch(e) {}
+---
+<BaseLayout title="Blog">
+  <section class="section">
+    <div class="container">
+      <span class="section-label">Knowledge base</span>
+      <h1>Tech Hub Blog</h1>
+      <p class="blog-sub">Tutorials, community stories, and tech insights from Hub members.</p>
+      <div class="posts-grid">
+        {posts.length > 0 ? posts.map((post: any) => (
+          <a href={"/blog/" + post.slug.current} class="post-card card">
+            {post.coverImage && <img src={post.coverImage} alt={post.title} class="post-img" loading="lazy"/>}
+            <div class="post-meta">
+              {post.category && <span class="post-tag">{post.category}</span>}
+              <span class="post-date">{new Date(post.publishedAt).toLocaleDateString('en-JM',{dateStyle:'medium'})}</span>
+            </div>
+            <h3>{post.title}</h3>
+            <p>{post.excerpt}</p>
+          </a>
+        )) : (
+          <div class="empty-state">
+            <p>Blog posts will appear here once Sanity CMS is connected.</p>
+            <a href="/join" class="btn btn-primary" style="margin-top:var(--space-4)">Join Tech Hub →</a>
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+<style>
+.blog-sub { font-size:var(--text-lg); margin:var(--space-4) 0 var(--space-12); }
+.posts-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-6); }
+.post-card { display:flex; flex-direction:column; gap:var(--space-3); text-decoration:none; }
+.post-img { width:100%; height:200px; object-fit:cover; border-radius:var(--radius-sm); background:var(--color-surface-2); }
+.post-meta { display:flex; align-items:center; gap:var(--space-3); }
+.post-tag { font-size:var(--text-xs); font-weight:600; font-family:var(--font-display); letter-spacing:.05em; text-transform:uppercase; color:var(--color-primary); }
+.post-date { font-size:var(--text-xs); color:var(--color-muted); }
+.empty-state { grid-column:1/-1; display:flex; flex-direction:column; align-items:center; text-align:center; padding:var(--space-16); border:1px dashed var(--color-border); border-radius:var(--radius-md); }
+.empty-state p { max-width:40ch; text-align:center; }
+@media (max-width:768px) { .posts-grid { grid-template-columns:1fr; } }
+</style>
