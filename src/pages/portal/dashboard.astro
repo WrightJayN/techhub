@@ -1,0 +1,283 @@
+export const prerender = false;
+
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { parseSessionCookie } from '../../lib/auth';
+import { getAuthorByEmail, getPostsByAuthor, getAllEvents } from '../../lib/sanity-write';
+
+const session = parseSessionCookie(Astro.request.headers.get('cookie'));
+if (!session) return Astro.redirect('/portal');
+
+const author = await getAuthorByEmail(session.email);
+if (!author) return Astro.redirect('/portal?error=not_found');
+
+const [posts, events] = await Promise.all([
+  getPostsByAuthor(author._id),
+  getAllEvents(),
+]);
+---
+
+<BaseLayout title="Dashboard — Author Portal">
+  <div class="portal-layout">
+
+    <!-- Sidebar -->
+    <aside class="portal-sidebar">
+      <div class="sidebar-brand">
+        <span class="logo-tech">TECH</span><span class="logo-hub">HUB</span>
+        <span class="portal-label">Portal</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/portal/dashboard" class="sidebar-link is-active">📊 Dashboard</a>
+        <a href="/portal/posts/new" class="sidebar-link">✏️ New Post</a>
+        <a href="/portal/events/new" class="sidebar-link">📅 New Event</a>
+      </nav>
+      <div class="sidebar-user">
+        <div class="user-info">
+          <span class="user-name">{author.name}</span>
+          <span class="user-role">{author.role || 'Author'}</span>
+        </div>
+        <a href="/api/portal/logout" class="logout-link">Sign out</a>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="portal-main">
+      <header class="portal-header">
+        <h1>Welcome back, {author.name.split(' ')[0]}.</h1>
+        <p>Manage your blog posts and events from here.</p>
+      </header>
+
+      <!-- Stats -->
+      <div class="portal-stats">
+        <div class="stat-card">
+          <span class="stat-num">{posts.length}</span>
+          <span class="stat-label">Your posts</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num">{events.length}</span>
+          <span class="stat-label">Total events</span>
+        </div>
+      </div>
+
+      <!-- Posts -->
+      <section class="portal-section">
+        <div class="section-head">
+          <h2>Your Blog Posts</h2>
+          <a href="/portal/posts/new" class="btn btn-primary">+ New post</a>
+        </div>
+        {posts.length > 0 ? (
+          <div class="content-table">
+            {posts.map((post: any) => (
+              <div class="table-row">
+                <div class="row-info">
+                  <span class="row-title">{post.title}</span>
+                  <span class={`row-status ${post.status}`}>{post.status}</span>
+                </div>
+                <div class="row-date">{new Date(post.publishedAt).toLocaleDateString('en-JM', { dateStyle: 'medium' })}</div>
+                <div class="row-actions">
+                  <a href={`/portal/posts/edit?id=${post._id}`} class="btn btn-outline row-btn">Edit</a>
+                  <button class="btn row-btn delete-btn" data-id={post._id} data-type="post">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div class="empty-table">
+            <p>No posts yet. <a href="/portal/posts/new">Write your first post →</a></p>
+          </div>
+        )}
+      </section>
+
+      <!-- Events -->
+      <section class="portal-section">
+        <div class="section-head">
+          <h2>Events</h2>
+          <a href="/portal/events/new" class="btn btn-primary">+ New event</a>
+        </div>
+        {events.length > 0 ? (
+          <div class="content-table">
+            {events.map((event: any) => (
+              <div class="table-row">
+                <div class="row-info">
+                  <span class="row-title">{event.title}</span>
+                  <span class="row-location">{event.location}</span>
+                </div>
+                <div class="row-date">{new Date(event.date).toLocaleDateString('en-JM', { dateStyle: 'medium' })}</div>
+                <div class="row-actions">
+                  <a href={`/portal/events/edit?id=${event._id}`} class="btn btn-outline row-btn">Edit</a>
+                  <button class="btn row-btn delete-btn" data-id={event._id} data-type="event">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div class="empty-table">
+            <p>No events yet. <a href="/portal/events/new">Add your first event →</a></p>
+          </div>
+        )}
+      </section>
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      const { id, type } = el.dataset;
+      if (!confirm(`Delete this ${type}? This cannot be undone.`)) return;
+      el.textContent = 'Deleting…';
+      el.setAttribute('disabled', 'true');
+      const res = await fetch('/api/portal/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, type }),
+      });
+      if (res.ok) {
+        el.closest('.table-row')?.remove();
+      } else {
+        alert('Delete failed. Please try again.');
+        el.textContent = 'Delete';
+        el.removeAttribute('disabled');
+      }
+    });
+  });
+</script>
+
+<style>
+.portal-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.portal-sidebar {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-8) var(--space-6);
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+}
+
+.sidebar-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-8);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.logo-tech { color: var(--color-text); }
+.logo-hub  { color: var(--color-primary); }
+.portal-label {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-muted);
+  transition: all var(--transition);
+  text-decoration: none;
+}
+
+.sidebar-link:hover, .sidebar-link.is-active {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.sidebar-link.is-active { color: var(--color-primary); }
+
+.sidebar-user {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.user-info { display: flex; flex-direction: column; gap: 2px; }
+.user-name { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
+.user-role { font-size: var(--text-xs); color: var(--color-muted); }
+.logout-link { font-size: var(--text-xs); color: var(--color-muted); text-decoration: none; }
+.logout-link:hover { color: var(--color-primary); }
+
+/* Main */
+.portal-main { padding: var(--space-12); display: flex; flex-direction: column; gap: var(--space-12); }
+.portal-header h1 { font-size: var(--text-3xl); margin-bottom: var(--space-2); }
+.portal-header p { font-size: var(--text-base); }
+
+.portal-stats { display: flex; gap: var(--space-4); }
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 120px;
+}
+.stat-num { font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 700; color: var(--color-primary); }
+.stat-label { font-size: var(--text-xs); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+
+.portal-section { display: flex; flex-direction: column; gap: var(--space-4); }
+.section-head { display: flex; justify-content: space-between; align-items: center; }
+.section-head h2 { font-size: var(--text-xl); }
+
+.content-table { display: flex; flex-direction: column; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+.table-row:last-child { border-bottom: none; }
+.row-info { display: flex; flex-direction: column; gap: var(--space-1); }
+.row-title { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
+.row-location { font-size: var(--text-xs); color: var(--color-muted); }
+.row-status { font-size: var(--text-xs); font-family: var(--font-display); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.row-status.published { color: #4caf50; }
+.row-status.draft { color: var(--color-muted); }
+.row-date { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.row-actions { display: flex; gap: var(--space-2); }
+.row-btn { padding: 0.4rem 0.875rem; font-size: var(--text-xs); }
+.delete-btn { border: 1px solid #CC0000; color: #CC0000; background: transparent; cursor: pointer; }
+.delete-btn:hover { background: rgba(204,0,0,0.1); }
+
+.empty-table { padding: var(--space-8); text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-md); }
+.empty-table p { font-size: var(--text-sm); max-width: none; text-align: center; }
+.empty-table a { color: var(--color-primary); }
+
+@media (max-width: 768px) {
+  .portal-layout { grid-template-columns: 1fr; }
+  .portal-sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; }
+  .portal-main { padding: var(--space-6); }
+  .table-row { grid-template-columns: 1fr; gap: var(--space-2); }
+}
+</style>

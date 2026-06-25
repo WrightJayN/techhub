@@ -1,0 +1,161 @@
+export const prerender = false;
+
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { parseSessionCookie } from '../../../lib/auth';
+import { sanityWriteClient } from '../../../lib/sanity-write';
+
+const session = parseSessionCookie(Astro.request.headers.get('cookie'));
+if (!session) return Astro.redirect('/portal');
+
+const id = Astro.url.searchParams.get('id');
+let post: any = null;
+
+if (id) {
+  post = await sanityWriteClient.fetch(
+    `*[_type == "post" && _id == $id][0]{
+      _id, title, excerpt,
+      "body": pt::text(body),
+      "category": category->title,
+      "authorId": author._ref
+    }`,
+    { id }
+  );
+  if (post?.authorId !== session.authorId) return Astro.redirect('/portal/dashboard');
+}
+---
+
+<BaseLayout title={post ? 'Edit Post' : 'New Post'}>
+  <div class="portal-layout">
+    <aside class="portal-sidebar">
+      <div class="sidebar-brand">
+        <span class="logo-tech">TECH</span><span class="logo-hub">HUB</span>
+        <span class="portal-label">Portal</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/portal/dashboard" class="sidebar-link">📊 Dashboard</a>
+        <a href="/portal/posts/new" class="sidebar-link is-active">✏️ New Post</a>
+        <a href="/portal/events/new" class="sidebar-link">📅 New Event</a>
+      </nav>
+      <a href="/api/portal/logout" class="logout-link">Sign out</a>
+    </aside>
+
+    <main class="portal-main">
+      <header class="portal-header">
+        <h1>{post ? 'Edit Post' : 'New Post'}</h1>
+        <a href="/portal/dashboard" class="btn btn-outline">← Dashboard</a>
+      </header>
+
+      <form class="editor-form" id="editorForm">
+        <input type="hidden" name="id" value={post?._id || ''} />
+
+        <div class="field">
+          <label for="title">Title *</label>
+          <input type="text" id="title" name="title" value={post?.title || ''} placeholder="Your post title" required />
+        </div>
+
+        <div class="field">
+          <label for="category">Category</label>
+          <input type="text" id="category" name="category" value={post?.category || ''} placeholder="e.g. Tutorial, Community, Opinion" list="category-list"/>
+          <datalist id="category-list">
+            <option value="Tutorial"/>
+            <option value="Community"/>
+            <option value="Opinion"/>
+            <option value="News"/>
+          </datalist>
+        </div>
+
+        <div class="field">
+          <label for="excerpt">Excerpt <span class="field-hint">(shown on blog listing, max 160 chars)</span></label>
+          <textarea id="excerpt" name="excerpt" rows={3} maxlength={160} placeholder="A short summary of your post...">{post?.excerpt || ''}</textarea>
+        </div>
+
+        <div class="field">
+          <label for="body">Content *</label>
+          <textarea id="body" name="body" rows={18} placeholder="Write your post content here...">{post?.body || ''}</textarea>
+        </div>
+
+        <div class="editor-actions">
+          <button type="button" class="btn btn-outline" id="saveDraftBtn">Save draft</button>
+          <button type="button" class="btn btn-primary" id="publishBtn">
+            {post ? 'Save & publish' : 'Publish post'}
+          </button>
+        </div>
+
+        <div class="save-status" id="saveStatus"></div>
+      </form>
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  async function save(publish: boolean) {
+    const form = document.getElementById('editorForm') as HTMLFormElement;
+    const status = document.getElementById('saveStatus') as HTMLDivElement;
+    const data = {
+      id: (form.querySelector('[name=id]') as HTMLInputElement).value,
+      title: (form.querySelector('[name=title]') as HTMLInputElement).value,
+      excerpt: (form.querySelector('[name=excerpt]') as HTMLTextAreaElement).value,
+      body: (form.querySelector('[name=body]') as HTMLTextAreaElement).value,
+      categoryTitle: (form.querySelector('[name=category]') as HTMLInputElement).value,
+      publish,
+    };
+    status.textContent = 'Saving…';
+    status.className = 'save-status saving';
+    const res = await fetch('/api/portal/save-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      const result = await res.json();
+      status.textContent = publish ? '✓ Published!' : '✓ Draft saved.';
+      status.className = 'save-status success';
+      if (!data.id) {
+        // Update URL to edit mode without reload
+        window.history.replaceState({}, '', `/portal/posts/edit?id=${result.id}`);
+        (form.querySelector('[name=id]') as HTMLInputElement).value = result.id;
+      }
+    } else {
+      status.textContent = '✗ Save failed. Please try again.';
+      status.className = 'save-status error';
+    }
+  }
+
+  document.getElementById('saveDraftBtn')?.addEventListener('click', () => save(false));
+  document.getElementById('publishBtn')?.addEventListener('click', () => save(true));
+</script>
+
+<style>
+.portal-layout { display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+.portal-sidebar { background:var(--color-surface); border-right:1px solid var(--color-border); display:flex; flex-direction:column; padding:var(--space-8) var(--space-6); position:sticky; top:64px; height:calc(100vh - 64px); }
+.sidebar-brand { font-family:var(--font-display); font-weight:700; font-size:var(--text-lg); margin-bottom:var(--space-8); display:flex; align-items:baseline; gap:var(--space-2); }
+.logo-tech { color:var(--color-text); } .logo-hub { color:var(--color-primary); }
+.portal-label { font-size:var(--text-xs); color:var(--color-muted); font-weight:500; letter-spacing:.05em; text-transform:uppercase; }
+.sidebar-nav { display:flex; flex-direction:column; gap:var(--space-1); flex:1; }
+.sidebar-link { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); border-radius:var(--radius-sm); font-size:var(--text-sm); font-family:var(--font-display); font-weight:500; color:var(--color-muted); transition:all var(--transition); text-decoration:none; }
+.sidebar-link:hover, .sidebar-link.is-active { background:var(--color-surface-2); color:var(--color-primary); }
+.logout-link { font-size:var(--text-xs); color:var(--color-muted); text-decoration:none; padding-top:var(--space-4); border-top:1px solid var(--color-border); }
+.logout-link:hover { color:var(--color-primary); }
+.portal-main { padding:var(--space-12); display:flex; flex-direction:column; gap:var(--space-8); }
+.portal-header { display:flex; justify-content:space-between; align-items:center; }
+.portal-header h1 { font-size:var(--text-3xl); }
+.editor-form { display:flex; flex-direction:column; gap:var(--space-6); max-width:800px; }
+.field { display:flex; flex-direction:column; gap:var(--space-2); }
+label { font-family:var(--font-display); font-size:var(--text-sm); font-weight:600; color:var(--color-text); }
+.field-hint { font-weight:400; color:var(--color-muted); font-size:var(--text-xs); }
+input, textarea, select {
+  background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:var(--radius-sm);
+  color:var(--color-text); font-family:var(--font-body); font-size:var(--text-base);
+  padding:0.75rem 1rem; width:100%; outline:none; transition:border-color var(--transition);
+}
+input:focus, textarea:focus { border-color:var(--color-primary); }
+input::placeholder, textarea::placeholder { color:var(--color-muted); }
+textarea { resize:vertical; line-height:1.6; }
+.editor-actions { display:flex; gap:var(--space-3); padding-top:var(--space-2); }
+.save-status { font-size:var(--text-sm); padding:var(--space-2) 0; }
+.save-status.saving { color:var(--color-muted); }
+.save-status.success { color:#4caf50; }
+.save-status.error { color:#ff6666; }
+@media (max-width:768px) { .portal-layout { grid-template-columns:1fr; } .portal-sidebar { position:static; height:auto; } .portal-main { padding:var(--space-6); } }
+</style>
