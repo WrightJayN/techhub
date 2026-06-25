@@ -17,6 +17,7 @@
     "@sanity/client": "^7.23.0",
     "@sanity/vision": "^6.1.0",
     "astro": "^7.0.2",
-    "sanity": "^6.1.0"
+    "sanity": "^6.1.0",
+    "resend": "^4.0.0"
   }
 }

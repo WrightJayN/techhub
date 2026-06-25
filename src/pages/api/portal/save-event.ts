@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { parseSessionCookie } from '../../../lib/auth';
-import { sanityWriteClient } from '../../../lib/sanity-write';
+import { getSanityWriteClient } from '../../../lib/sanity-write';
 
 export const POST: APIRoute = async ({ request }) => {
   const session = parseSessionCookie(request.headers.get('cookie'));
@@ -28,9 +28,9 @@ export const POST: APIRoute = async ({ request }) => {
 
   let result;
   if (id) {
-    result = await sanityWriteClient.patch(id).set(doc).commit();
+    result = await getSanityWriteClient().patch(id).set(doc).commit();
   } else {
-    result = await sanityWriteClient.create(doc);
+    result = await getSanityWriteClient().create(doc);
   }
 
   return new Response(JSON.stringify({ ok: true, id: result._id, slug }), { status: 200 });

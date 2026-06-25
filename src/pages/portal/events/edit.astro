@@ -1,2 +1,151 @@
-export const prerender = false;
 ---
+export const prerender = false;
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { parseSessionCookie } from '../../../lib/auth';
+import { getSanityWriteClient } from '../../../lib/sanity-write';
+
+const session = parseSessionCookie(Astro.request.headers.get('cookie'));
+if (!session) return Astro.redirect('/portal');
+
+const id = Astro.url.searchParams.get('id');
+let event: any = null;
+
+if (id) {
+  event = await getSanityWriteClient().fetch(
+    `*[_type == "event" && _id == $id][0]{ _id, title, date, location, description, registrationLink }`,
+    { id }
+  );
+}
+
+const dateValue = event?.date ? new Date(event.date).toISOString().slice(0,16) : '';
+---
+
+<BaseLayout title={event ? 'Edit Event' : 'New Event'}>
+  <div class="portal-layout">
+    <aside class="portal-sidebar">
+      <div class="sidebar-brand">
+        <span class="logo-tech">TECH</span><span class="logo-hub">HUB</span>
+        <span class="portal-label">Portal</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/portal/dashboard" class="sidebar-link">📊 Dashboard</a>
+        <a href="/portal/posts/new" class="sidebar-link">✏️ New Post</a>
+        <a href="/portal/events/new" class="sidebar-link is-active">📅 New Event</a>
+      </nav>
+      <a href="/api/portal/logout" class="logout-link">Sign out</a>
+    </aside>
+
+    <main class="portal-main">
+      <header class="portal-header">
+        <h1>{event ? 'Edit Event' : 'New Event'}</h1>
+        <a href="/portal/dashboard" class="btn btn-outline">← Dashboard</a>
+      </header>
+
+      <form class="editor-form" id="editorForm">
+        <input type="hidden" name="id" value={event?._id || ''} />
+
+        <div class="field">
+          <label for="title">Event title *</label>
+          <input type="text" id="title" name="title" value={event?.title || ''} placeholder="e.g. Web Dev Workshop" required />
+        </div>
+
+        <div class="field">
+          <label for="date">Date & time *</label>
+          <input type="datetime-local" id="date" name="date" value={dateValue} required />
+        </div>
+
+        <div class="field">
+          <label for="location">Location</label>
+          <input type="text" id="location" name="location" value={event?.location || ''} placeholder='e.g. Block 10, UTech Campus or "Online — Zoom"' />
+        </div>
+
+        <div class="field">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" rows={6} placeholder="What's this event about? Who should come? What will they learn?">{event?.description || ''}</textarea>
+        </div>
+
+        <div class="field">
+          <label for="registrationLink">Registration link <span class="field-hint">(optional)</span></label>
+          <input type="url" id="registrationLink" name="registrationLink" value={event?.registrationLink || ''} placeholder="https://forms.google.com/..." />
+        </div>
+
+        <div class="editor-actions">
+          <button type="button" class="btn btn-primary" id="saveBtn">
+            {event ? 'Save changes' : 'Create event'}
+          </button>
+        </div>
+
+        <div class="save-status" id="saveStatus"></div>
+      </form>
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  document.getElementById('saveBtn')?.addEventListener('click', async () => {
+    const form = document.getElementById('editorForm') as HTMLFormElement;
+    const status = document.getElementById('saveStatus') as HTMLDivElement;
+    const data = {
+      id: (form.querySelector('[name=id]') as HTMLInputElement).value,
+      title: (form.querySelector('[name=title]') as HTMLInputElement).value,
+      date: new Date((form.querySelector('[name=date]') as HTMLInputElement).value).toISOString(),
+      location: (form.querySelector('[name=location]') as HTMLInputElement).value,
+      description: (form.querySelector('[name=description]') as HTMLTextAreaElement).value,
+      registrationLink: (form.querySelector('[name=registrationLink]') as HTMLInputElement).value,
+    };
+    status.textContent = 'Saving…';
+    status.className = 'save-status saving';
+    const res = await fetch('/api/portal/save-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      const result = await res.json();
+      status.textContent = '✓ Event saved!';
+      status.className = 'save-status success';
+      if (!data.id) {
+        window.history.replaceState({}, '', `/portal/events/edit?id=${result.id}`);
+        (form.querySelector('[name=id]') as HTMLInputElement).value = result.id;
+      }
+    } else {
+      status.textContent = '✗ Save failed. Please try again.';
+      status.className = 'save-status error';
+    }
+  });
+</script>
+
+<style>
+.portal-layout { display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+.portal-sidebar { background:var(--color-surface); border-right:1px solid var(--color-border); display:flex; flex-direction:column; padding:var(--space-8) var(--space-6); position:sticky; top:64px; height:calc(100vh - 64px); }
+.sidebar-brand { font-family:var(--font-display); font-weight:700; font-size:var(--text-lg); margin-bottom:var(--space-8); display:flex; align-items:baseline; gap:var(--space-2); }
+.logo-tech { color:var(--color-text); } .logo-hub { color:var(--color-primary); }
+.portal-label { font-size:var(--text-xs); color:var(--color-muted); font-weight:500; letter-spacing:.05em; text-transform:uppercase; }
+.sidebar-nav { display:flex; flex-direction:column; gap:var(--space-1); flex:1; }
+.sidebar-link { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); border-radius:var(--radius-sm); font-size:var(--text-sm); font-family:var(--font-display); font-weight:500; color:var(--color-muted); transition:all var(--transition); text-decoration:none; }
+.sidebar-link:hover, .sidebar-link.is-active { background:var(--color-surface-2); color:var(--color-primary); }
+.logout-link { font-size:var(--text-xs); color:var(--color-muted); text-decoration:none; padding-top:var(--space-4); border-top:1px solid var(--color-border); }
+.logout-link:hover { color:var(--color-primary); }
+.portal-main { padding:var(--space-12); display:flex; flex-direction:column; gap:var(--space-8); }
+.portal-header { display:flex; justify-content:space-between; align-items:center; }
+.portal-header h1 { font-size:var(--text-3xl); }
+.editor-form { display:flex; flex-direction:column; gap:var(--space-6); max-width:800px; }
+.field { display:flex; flex-direction:column; gap:var(--space-2); }
+label { font-family:var(--font-display); font-size:var(--text-sm); font-weight:600; color:var(--color-text); }
+.field-hint { font-weight:400; color:var(--color-muted); font-size:var(--text-xs); }
+input, textarea {
+  background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:var(--radius-sm);
+  color:var(--color-text); font-family:var(--font-body); font-size:var(--text-base);
+  padding:0.75rem 1rem; width:100%; outline:none; transition:border-color var(--transition);
+}
+input:focus, textarea:focus { border-color:var(--color-primary); }
+input::placeholder, textarea::placeholder { color:var(--color-muted); }
+input[type="datetime-local"] { color-scheme: dark; }
+textarea { resize:vertical; line-height:1.6; }
+.editor-actions { display:flex; gap:var(--space-3); padding-top:var(--space-2); }
+.save-status { font-size:var(--text-sm); padding:var(--space-2) 0; }
+.save-status.saving { color:var(--color-muted); }
+.save-status.success { color:#4caf50; }
+.save-status.error { color:#ff6666; }
+@media (max-width:768px) { .portal-layout { grid-template-columns:1fr; } .portal-sidebar { position:static; height:auto; } .portal-main { padding:var(--space-6); } }
+</style>

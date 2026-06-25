@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { parseSessionCookie } from '../../../lib/auth';
-import { sanityWriteClient } from '../../../lib/sanity-write';
+import { getSanityWriteClient } from '../../../lib/sanity-write';
 
 export const POST: APIRoute = async ({ request }) => {
   const session = parseSessionCookie(request.headers.get('cookie'));
@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   // For posts, verify the author owns it
   if (type === 'post') {
-    const post = await sanityWriteClient.fetch(
+    const post = await getSanityWriteClient().fetch(
       `*[_type == "post" && _id == $id][0]{ "authorId": author._ref }`,
       { id }
     );
@@ -24,6 +24,6 @@ export const POST: APIRoute = async ({ request }) => {
     }
   }
 
-  await sanityWriteClient.delete(id);
+  await getSanityWriteClient().delete(id);
   return new Response(JSON.stringify({ ok: true }), { status: 200 });
 };

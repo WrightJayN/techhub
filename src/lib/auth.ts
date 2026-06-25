@@ -1,12 +1,14 @@
 // Simple HMAC-based token for magic links
 // Token format: base64(email + expires + hmac)
 
-const SECRET = import.meta.env.TOKEN_SECRET || 'dev-secret-change-in-production';
+function getSecret(): string {
+  return process.env.TOKEN_SECRET || 'dev-secret-change-in-production';
+}
 
 export async function createMagicToken(email: string): Promise<string> {
   const expires = Date.now() + 15 * 60 * 1000; // 15 minutes
   const payload = `${email}|${expires}`;
-  const hmac = await sign(payload, SECRET);
+  const hmac = await sign(payload, getSecret());
   return btoa(`${payload}|${hmac}`);
 }
 
@@ -17,10 +19,10 @@ export async function verifyMagicToken(token: string): Promise<string | null> {
     if (parts.length !== 3) return null;
     const [email, expiresStr, hmac] = parts;
     const expires = parseInt(expiresStr);
-    if (Date.now() > expires) return null; // expired
+    if (Date.now() > expires) return null;
     const payload = `${email}|${expiresStr}`;
-    const expected = await sign(payload, SECRET);
-    if (hmac !== expected) return null; // tampered
+    const expected = await sign(payload, getSecret());
+    if (hmac !== expected) return null;
     return email;
   } catch {
     return null;

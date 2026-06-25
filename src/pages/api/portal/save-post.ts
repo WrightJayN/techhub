@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { parseSessionCookie } from '../../../lib/auth';
-import { sanityWriteClient, getAuthorByEmail } from '../../../lib/sanity-write';
+import { getSanityWriteClient, getAuthorByEmail } from '../../../lib/sanity-write';
 
 export const POST: APIRoute = async ({ request }) => {
   const session = parseSessionCookie(request.headers.get('cookie'));
@@ -19,12 +19,12 @@ export const POST: APIRoute = async ({ request }) => {
   // Find or create category
   let categoryRef = null;
   if (categoryTitle) {
-    let cat = await sanityWriteClient.fetch(
+    let cat = await getSanityWriteClient().fetch(
       `*[_type == "category" && title == $title][0]{ _id }`,
       { title: categoryTitle }
     );
     if (!cat) {
-      cat = await sanityWriteClient.create({ _type: 'category', title: categoryTitle });
+      cat = await getSanityWriteClient().create({ _type: 'category', title: categoryTitle });
     }
     categoryRef = { _type: 'reference', _ref: cat._id };
   }
@@ -43,15 +43,15 @@ export const POST: APIRoute = async ({ request }) => {
   let result;
   if (id) {
     // Verify ownership before update
-    const existing = await sanityWriteClient.fetch(
+    const existing = await getSanityWriteClient().fetch(
       `*[_type == "post" && _id == $id][0]{ "authorId": author._ref }`, { id }
     );
     if (existing?.authorId !== session.authorId) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
     }
-    result = await sanityWriteClient.patch(id).set(doc).commit();
+    result = await getSanityWriteClient().patch(id).set(doc).commit();
   } else {
-    result = await sanityWriteClient.create(doc);
+    result = await getSanityWriteClient().create(doc);
   }
 
   return new Response(JSON.stringify({ ok: true, id: result._id, slug }), { status: 200 });

@@ -2,7 +2,7 @@
 export const prerender = false;
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { parseSessionCookie } from '../../../lib/auth';
-import { sanityWriteClient } from '../../../lib/sanity-write';
+import { getSanityWriteClient } from '../../../lib/sanity-write';
 
 const session = parseSessionCookie(Astro.request.headers.get('cookie'));
 if (!session) return Astro.redirect('/portal');
@@ -11,7 +11,7 @@ const id = Astro.url.searchParams.get('id');
 let event: any = null;
 
 if (id) {
-  event = await sanityWriteClient.fetch(
+  event = await getSanityWriteClient().fetch(
     `*[_type == "event" && _id == $id][0]{ _id, title, date, location, description, registrationLink }`,
     { id }
   );

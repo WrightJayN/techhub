@@ -5,8 +5,6 @@ import { Resend } from 'resend';
 import { createMagicToken } from '../../../lib/auth';
 import { getAuthorByEmail } from '../../../lib/sanity-write';
 
-const resend = new Resend(import.meta.env.RESEND_API_KEY);
-
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { email } = await request.json();
@@ -15,16 +13,17 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: 'Valid email required' }), { status: 400 });
     }
 
-    // Check this email belongs to a registered author in Sanity
     const author = await getAuthorByEmail(email.toLowerCase().trim());
     if (!author) {
-      // Return success anyway to avoid email enumeration
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
 
     const token = await createMagicToken(email.toLowerCase().trim());
-    const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'http://localhost:4321';
+    const siteUrl = process.env.PUBLIC_SITE_URL || import.meta.env.PUBLIC_SITE_URL || 'http://localhost:4321';
     const magicLink = `${siteUrl}/portal/verify?token=${encodeURIComponent(token)}`;
+
+    // Create Resend inside handler so key is read at runtime
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     await resend.emails.send({
       from: 'Tech Hub <onboarding@resend.dev>',
