@@ -1,10 +1,8 @@
-export const prerender = false;
-
 ---
+export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { parseSessionCookie } from '../../lib/auth';
 
-// Already logged in? Send to dashboard
 const session = parseSessionCookie(Astro.request.headers.get('cookie'));
 if (session) return Astro.redirect('/portal/dashboard');
 
@@ -15,7 +13,6 @@ const errorMessages: Record<string, string> = {
   not_found: 'No author account found for this email. Contact the Hub admin.',
 };
 ---
-
 <BaseLayout title="Author Portal">
   <section class="portal-login">
     <div class="login-card">
@@ -59,14 +56,12 @@ const errorMessages: Record<string, string> = {
     const email = (document.getElementById('email') as HTMLInputElement).value;
     btn.textContent = 'Sending…';
     btn.disabled = true;
-
     try {
       const res = await fetch('/api/portal/send-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-
       if (res.ok) {
         form.style.display = 'none';
         successMsg.style.display = 'flex';
@@ -84,77 +79,23 @@ const errorMessages: Record<string, string> = {
 </script>
 
 <style>
-.portal-login {
-  min-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-8);
-}
-
-.login-card {
-  width: 100%;
-  max-width: 420px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-12);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.login-logo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--text-2xl);
-  margin-bottom: var(--space-2);
-}
-
-.logo-tech { color: var(--color-text); }
-.logo-hub  { color: var(--color-primary); }
-
-.login-card h1 { font-size: var(--text-2xl); }
-.login-card > p { font-size: var(--text-sm); }
-
-.error-banner {
-  background: rgba(204,0,0,0.12);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-sm);
-  padding: var(--space-3) var(--space-4);
-  font-size: var(--text-sm);
-  color: #ff6666;
-}
-
-.login-form { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-2); }
-
-.field { display: flex; flex-direction: column; gap: var(--space-2); }
-label { font-family: var(--font-display); font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
-input {
-  background: var(--color-surface-2); border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm); color: var(--color-text);
-  font-family: var(--font-body); font-size: var(--text-base);
-  padding: 0.75rem 1rem; width: 100%; outline: none;
-  transition: border-color var(--transition);
-}
-input:focus { border-color: var(--color-primary); }
-input::placeholder { color: var(--color-muted); }
-
-.submit-btn { width: 100%; justify-content: center; padding: 0.875rem; }
-.submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.success-msg {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  background: rgba(0,180,0,0.08);
-  border: 1px solid #1a6b1a;
-  border-radius: var(--radius-sm);
-  padding: var(--space-4);
-  margin-top: var(--space-2);
-}
-.success-icon { color: #4caf50; font-size: var(--text-xl); flex-shrink: 0; }
-.success-msg p { font-size: var(--text-sm); color: var(--color-text); max-width: none; margin: 0; }
-
-.login-note { font-size: var(--text-xs); color: var(--color-muted); margin-top: var(--space-4); max-width: none; }
+.portal-login { min-height:80vh; display:flex; align-items:center; justify-content:center; padding:var(--space-8); }
+.login-card { width:100%; max-width:420px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:var(--space-12); display:flex; flex-direction:column; gap:var(--space-4); }
+.login-logo { font-family:var(--font-display); font-weight:700; font-size:var(--text-2xl); margin-bottom:var(--space-2); }
+.logo-tech { color:var(--color-text); } .logo-hub { color:var(--color-primary); }
+.login-card h1 { font-size:var(--text-2xl); }
+.login-card > p { font-size:var(--text-sm); }
+.error-banner { background:rgba(204,0,0,0.12); border:1px solid var(--color-primary); border-radius:var(--radius-sm); padding:var(--space-3) var(--space-4); font-size:var(--text-sm); color:#ff6666; }
+.login-form { display:flex; flex-direction:column; gap:var(--space-4); margin-top:var(--space-2); }
+.field { display:flex; flex-direction:column; gap:var(--space-2); }
+label { font-family:var(--font-display); font-size:var(--text-sm); font-weight:600; color:var(--color-text); }
+input { background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:var(--radius-sm); color:var(--color-text); font-family:var(--font-body); font-size:var(--text-base); padding:0.75rem 1rem; width:100%; outline:none; transition:border-color var(--transition); }
+input:focus { border-color:var(--color-primary); }
+input::placeholder { color:var(--color-muted); }
+.submit-btn { width:100%; justify-content:center; padding:0.875rem; }
+.submit-btn:disabled { opacity:0.6; cursor:not-allowed; }
+.success-msg { display:flex; align-items:flex-start; gap:var(--space-3); background:rgba(0,180,0,0.08); border:1px solid #1a6b1a; border-radius:var(--radius-sm); padding:var(--space-4); margin-top:var(--space-2); }
+.success-icon { color:#4caf50; font-size:var(--text-xl); flex-shrink:0; }
+.success-msg p { font-size:var(--text-sm); color:var(--color-text); max-width:none; margin:0; }
+.login-note { font-size:var(--text-xs); color:var(--color-muted); margin-top:var(--space-4); max-width:none; }
 </style>
