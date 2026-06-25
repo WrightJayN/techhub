@@ -1,0 +1,243 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { sanityClient, BLOG_POST_QUERY, BLOG_POSTS_QUERY } from '../../lib/sanity';
+
+export async function getStaticPaths() {
+  let posts = [];
+  try {
+    posts = await sanityClient.fetch(BLOG_POSTS_QUERY);
+  } catch (e) {
+    return [];
+  }
+  return posts.map((post: any) => ({
+    params: { slug: post.slug.current },
+  }));
+}
+
+const { slug } = Astro.params;
+
+let post: any = null;
+try {
+  post = await sanityClient.fetch(BLOG_POST_QUERY, { slug });
+} catch (e) {}
+
+if (!post) {
+  return Astro.redirect('/blog');
+}
+
+// Render portable text blocks as basic HTML
+function renderBody(blocks: any[]): string {
+  if (!blocks) return '';
+  return blocks.map((block: any) => {
+    if (block._type === 'image') {
+      return `<figure class="post-figure">
+        <img src="${block.asset?.url || ''}" alt="${block.alt || ''}" loading="lazy"/>
+        ${block.caption ? `<figcaption>${block.caption}</figcaption>` : ''}
+      </figure>`;
+    }
+    if (block._type !== 'block') return '';
+    const tag = block.style === 'h2' ? 'h2'
+      : block.style === 'h3' ? 'h3'
+      : block.style === 'h4' ? 'h4'
+      : block.style === 'blockquote' ? 'blockquote'
+      : 'p';
+    const text = (block.children || []).map((child: any) => {
+      let t = child.text || '';
+      if (child.marks?.includes('strong')) t = `<strong>${t}</strong>`;
+      if (child.marks?.includes('em')) t = `<em>${t}</em>`;
+      if (child.marks?.includes('code')) t = `<code>${t}</code>`;
+      return t;
+    }).join('');
+    return `<${tag}>${text}</${tag}>`;
+  }).join('\n');
+}
+
+const bodyHtml = renderBody(post.body);
+---
+
+<BaseLayout title={post.title} description={post.excerpt}>
+
+  <article class="post-article">
+
+    <!-- Header -->
+    <header class="post-header">
+      <div class="container post-header-inner">
+        <div class="post-meta-top">
+          {post.category && <span class="post-tag">{post.category}</span>}
+          <span class="post-date">
+            {new Date(post.publishedAt).toLocaleDateString('en-JM', { dateStyle: 'long' })}
+          </span>
+        </div>
+        <h1 class="post-title">{post.title}</h1>
+        {post.excerpt && <p class="post-excerpt">{post.excerpt}</p>}
+        {post.author && (
+          <div class="post-author">
+            <span>By</span>
+            <strong>{post.author}</strong>
+          </div>
+        )}
+      </div>
+    </header>
+
+    <!-- Cover image -->
+    {post.coverImage && (
+      <div class="post-cover">
+        <div class="container">
+          <img src={post.coverImage} alt={post.title} class="post-cover-img" />
+        </div>
+      </div>
+    )}
+
+    <!-- Body -->
+    <div class="container">
+      <div class="post-body" set:html={bodyHtml} />
+
+      <div class="post-footer">
+        <a href="/blog" class="btn btn-outline">← Back to Blog</a>
+      </div>
+    </div>
+
+  </article>
+
+</BaseLayout>
+
+<style>
+.post-header {
+  padding: var(--space-16) 0 var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.post-meta-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.post-tag {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-family: var(--font-display);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.post-date {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.post-title {
+  max-width: 18ch;
+  margin-bottom: var(--space-4);
+}
+
+.post-excerpt {
+  font-size: var(--text-lg);
+  max-width: 55ch;
+  margin-bottom: var(--space-6);
+}
+
+.post-author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.post-author strong {
+  color: var(--color-text);
+}
+
+.post-cover {
+  padding: var(--space-8) 0;
+}
+
+.post-cover-img {
+  width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+/* Rich text body */
+.post-body {
+  max-width: 72ch;
+  margin: var(--space-12) auto;
+  font-size: var(--text-lg);
+  line-height: 1.8;
+  color: var(--color-text);
+}
+
+.post-body p {
+  color: var(--color-text);
+  max-width: none;
+  margin-bottom: var(--space-6);
+}
+
+.post-body h2 {
+  font-size: var(--text-2xl);
+  margin: var(--space-12) 0 var(--space-4);
+  color: var(--color-text);
+}
+
+.post-body h3 {
+  font-size: var(--text-xl);
+  margin: var(--space-8) 0 var(--space-3);
+  color: var(--color-text);
+}
+
+.post-body h4 {
+  font-size: var(--text-lg);
+  margin: var(--space-6) 0 var(--space-2);
+  color: var(--color-text);
+}
+
+.post-body blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding-left: var(--space-6);
+  margin: var(--space-8) 0;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.post-body strong { color: var(--color-white); font-weight: 600; }
+.post-body em { color: var(--color-muted); }
+
+.post-body code {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.4em;
+  font-size: 0.9em;
+  font-family: monospace;
+  color: var(--color-accent);
+}
+
+.post-figure {
+  margin: var(--space-8) 0;
+}
+
+.post-figure img {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.post-figure figcaption {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-top: var(--space-2);
+}
+
+.post-footer {
+  max-width: 72ch;
+  margin: var(--space-16) auto var(--space-24);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--color-border);
+}
+</style>
