@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { sanityClient, EVENTS_QUERY, EVENT_QUERY } from '../../lib/sanity';
+
+export async function getStaticPaths() {
+  let events: any[] = [];
+  try { events = await sanityClient.fetch(EVENTS_QUERY); } catch(e) { return []; }
+  return events
+    .filter((e: any) => e.slug?.current)
+    .map((e: any) => ({ params: { slug: e.slug.current } }));
+}
+
+const { slug } = Astro.params;
+let event: any = null;
+try { event = await sanityClient.fetch(EVENT_QUERY, { slug }); } catch(e) {}
+if (!event) return Astro.redirect('/events');
+
+const dateFormatted = new Date(event.date).toLocaleDateString('en-JM', { dateStyle: 'long' });
+const timeFormatted = new Date(event.date).toLocaleTimeString('en-JM', { timeStyle: 'short' });
+---
+<BaseLayout title={event.title} description={event.description}>
+  <article class="event-article">
+
+    <header class="event-header">
+      <div class="container">
+        <span class="section-label">Event</span>
+        <h1>{event.title}</h1>
+        <div class="event-meta">
+          <div class="meta-item">
+            <span class="meta-icon">📅</span>
+            <span>{dateFormatted} at {timeFormatted}</span>
+          </div>
+          {event.location && (
+            <div class="meta-item">
+              <span class="meta-icon">📍</span>
+              <span>{event.location}</span>
+            </div>
+          )}
+        </div>
+        {event.registrationLink && (
+          <a href={event.registrationLink} class="btn btn-primary" target="_blank" rel="noopener">
+            Register now →
+          </a>
+        )}
+      </div>
+    </header>
+
+    {event.coverImage && (
+      <div class="container event-cover-wrap">
+        <img src={event.coverImage} alt={event.title} class="event-cover-img"/>
+      </div>
+    )}
+
+    {event.description && (
+      <div class="container event-body">
+        <p>{event.description}</p>
+      </div>
+    )}
+
+    <div class="container event-footer">
+      <a href="/events" class="btn btn-outline">← Back to Events</a>
+    </div>
+
+  </article>
+</BaseLayout>
+<style>
+.event-header { padding:var(--space-16) 0 var(--space-8); border-bottom:1px solid var(--color-border); }
+.event-header h1 { margin:var(--space-4) 0 var(--space-6); }
+.event-meta { display:flex; flex-direction:column; gap:var(--space-3); margin-bottom:var(--space-8); }
+.meta-item { display:flex; align-items:center; gap:var(--space-3); font-size:var(--text-lg); color:var(--color-text); }
+.meta-icon { font-size:var(--text-xl); }
+.event-cover-wrap { padding:var(--space-8) 0; }
+.event-cover-img { width:100%; max-height:480px; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--color-border); }
+.event-body { max-width:72ch; margin:var(--space-8) auto; font-size:var(--text-lg); line-height:1.8; }
+.event-body p { color:var(--color-text); max-width:none; }
+.event-footer { max-width:72ch; margin:var(--space-12) auto var(--space-24); padding-top:var(--space-8); border-top:1px solid var(--color-border); }
+</style>

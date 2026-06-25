@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { sanityClient, EVENTS_QUERY } from '../../lib/sanity';
-let events = [];
+let events: any[] = [];
 try { events = await sanityClient.fetch(EVENTS_QUERY); } catch(e) {}
 ---
 <BaseLayout title="Events">
@@ -12,7 +12,10 @@ try { events = await sanityClient.fetch(EVENTS_QUERY); } catch(e) {}
       <p class="events-sub">Workshops, hackathons, talks, and meetups. All free for members.</p>
       <div class="events-list">
         {events.length > 0 ? events.map((event: any) => (
-          <div class="event-card card">
+          <a href={"/events/" + event.slug.current} class="event-card card">
+            {event.coverImage && (
+              <img src={event.coverImage} alt={event.title} class="event-cover" loading="lazy"/>
+            )}
             <div class="event-date-block">
               <span class="event-month">{new Date(event.date).toLocaleDateString('en-JM',{month:'short'})}</span>
               <span class="event-day">{new Date(event.date).getDate()}</span>
@@ -22,10 +25,8 @@ try { events = await sanityClient.fetch(EVENTS_QUERY); } catch(e) {}
               <span class="event-location">{event.location}</span>
               <p>{event.description}</p>
             </div>
-            {event.registrationLink && (
-              <a href={event.registrationLink} class="btn btn-outline" target="_blank" rel="noopener">Register →</a>
-            )}
-          </div>
+            <span class="event-arrow">→</span>
+          </a>
         )) : (
           <div class="empty-state">
             <p>Events will appear here once Sanity CMS is connected.</p>
@@ -39,14 +40,17 @@ try { events = await sanityClient.fetch(EVENTS_QUERY); } catch(e) {}
 <style>
 .events-sub { font-size:var(--text-lg); margin:var(--space-4) 0 var(--space-12); }
 .events-list { display:flex; flex-direction:column; gap:var(--space-4); }
-.event-card { display:flex; align-items:flex-start; gap:var(--space-6); }
-.event-date-block { display:flex; flex-direction:column; align-items:center; min-width:52px; background:var(--color-surface-2); border-radius:var(--radius-sm); padding:var(--space-3); }
+.event-card { display:flex; align-items:center; gap:var(--space-6); text-decoration:none; position:relative; overflow:hidden; }
+.event-cover { width:120px; height:90px; object-fit:cover; border-radius:var(--radius-sm); flex-shrink:0; }
+.event-date-block { display:flex; flex-direction:column; align-items:center; min-width:52px; background:var(--color-surface-2); border-radius:var(--radius-sm); padding:var(--space-3); flex-shrink:0; }
 .event-month { font-size:var(--text-xs); font-family:var(--font-display); font-weight:700; text-transform:uppercase; color:var(--color-primary); letter-spacing:.1em; }
 .event-day { font-size:var(--text-3xl); font-family:var(--font-display); font-weight:700; line-height:1; color:var(--color-text); }
 .event-body { flex:1; display:flex; flex-direction:column; gap:var(--space-2); }
-.event-body h3 { font-size:var(--text-xl); }
+.event-body h3 { font-size:var(--text-xl); color:var(--color-text); }
 .event-location { font-size:var(--text-sm); color:var(--color-muted); }
+.event-body p { font-size:var(--text-sm); }
+.event-arrow { color:var(--color-primary); font-size:var(--text-xl); flex-shrink:0; }
 .empty-state { display:flex; flex-direction:column; align-items:center; text-align:center; padding:var(--space-16); border:1px dashed var(--color-border); border-radius:var(--radius-md); }
 .empty-state p { max-width:40ch; text-align:center; }
-@media (max-width:600px) { .event-card { flex-direction:column; } }
+@media (max-width:600px) { .event-card { flex-direction:column; align-items:flex-start; } .event-cover { width:100%; height:180px; } }
 </style>

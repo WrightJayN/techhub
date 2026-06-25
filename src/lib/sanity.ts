@@ -7,8 +7,6 @@ export const sanityClient = createClient({
   useCdn: true,
 });
 
-// ─── QUERIES ──────────────────────────────────────────────────────
-
 export const BLOG_POSTS_QUERY = `
   *[_type == "post"] | order(publishedAt desc) {
     _id,
@@ -18,7 +16,7 @@ export const BLOG_POSTS_QUERY = `
     publishedAt,
     "author": author->name,
     "category": category->title,
-    "coverImage": coverImage.asset->url
+    "coverImage": coverImage.asset->url + "?w=800&auto=format"
   }
 `;
 
@@ -26,11 +24,18 @@ export const BLOG_POST_QUERY = `
   *[_type == "post" && slug.current == $slug][0] {
     _id,
     title,
-    body,
+    body[]{
+      ...,
+      _type == "image" => {
+        ...,
+        "asset": asset->{ url, metadata }
+      }
+    },
     publishedAt,
     "author": author->name,
     "category": category->title,
-    "coverImage": coverImage.asset->url
+    "coverImage": coverImage.asset->url + "?w=1200&auto=format",
+    excerpt
   }
 `;
 
@@ -38,9 +43,23 @@ export const EVENTS_QUERY = `
   *[_type == "event"] | order(date asc) {
     _id,
     title,
+    slug,
     date,
     location,
     description,
-    registrationLink
+    registrationLink,
+    "coverImage": coverImage.asset->url + "?w=800&auto=format"
+  }
+`;
+
+export const EVENT_QUERY = `
+  *[_type == "event" && slug.current == $slug][0] {
+    _id,
+    title,
+    date,
+    location,
+    description,
+    registrationLink,
+    "coverImage": coverImage.asset->url + "?w=1200&auto=format"
   }
 `;
